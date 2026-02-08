@@ -1,6 +1,13 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import streamlit as st
+
+col1, col2, col3 = st.columns([1,1,1])
+with col2: # Lo mettiamo nella colonna centrale per centrarlo
+    st.image("https://www.abbonamentiauto.it/wp-content/uploads/2023/04/Logo-Abbonamenti-Auto-2.png", width=250)
+
+st.title("🛡️ Smart Cost Analyzer")
 
 # Nuovo Titolo della WebApp
 st.title("🛡️ Smart Cost Analyzer")
