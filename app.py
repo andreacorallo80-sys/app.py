@@ -96,7 +96,7 @@ with col_n:
     st.subheader("🏢 Noleggio (NLT)")
     ant_n = st.number_input("Anticipo NLT (Imp. €)", value=1500)
     rata_n = st.number_input("Canone Mensile (Imp. €)", value=277)
-    st.info("💡 Manutenzione e Assicurazione incluse.")
+    st.info("💡 Manutenzione ordinaria e straordinaria, Rca, IF, K, traino e assistenza stradale.")
 
 # --- ELABORAZIONE ---
 sval_factor = {24: 0.65, 36: 0.55, 48: 0.45, 60: 0.35}
