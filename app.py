@@ -58,7 +58,6 @@ with col_a:
     st.subheader("💰 Acquisto")
     prezzo_imp_a = st.number_input("Prezzo Auto (Imp. €)", value=35000, key="prezzo_a")
     
-    # AGGIUNTA LOGICA FINANZIAMENTO
     scelta_pagamento = st.radio("Modalità di Pagamento", ["Contanti", "Finanziamento"])
     interessi_a = 0.0
     if scelta_pagamento == "Finanziamento":
@@ -66,7 +65,6 @@ with col_a:
         tan = st.number_input("TAN (%)", value=5.95)
         capitale_finanziato = prezzo_imp_a - anticipo_f
         if capitale_finanziato > 0:
-            # Calcolo rata e interessi passivi
             i_m = (tan / 100) / 12
             rata = capitale_finanziato * (i_m * (1 + i_m)**durata_mesi) / ((1 + i_m)**durata_mesi - 1)
             interessi_a = (rata * durata_mesi) - capitale_finanziato
@@ -98,6 +96,7 @@ with col_n:
     st.info("💡 RCA, IF e Manutenzione incluse nel canone.")
 
 # --- ELABORAZIONE ---
+# Calcolo Valore di Rivendita (Asset a fine periodo)
 sval_factor = {24: 0.65, 36: 0.55, 48: 0.45, 60: 0.35}
 valore_rivendita = prezzo_imp_a * sval_factor[durata_mesi]
 
@@ -105,17 +104,20 @@ valore_rivendita = prezzo_imp_a * sval_factor[durata_mesi]
 spese_tot_a = (rca_a + if_a + manut_a) * anni
 iva_a, tax_a = calcola_benefici(spese_tot_a + interessi_a, prezzo_imp_a)
 esborso_a = prezzo_imp_a + spese_tot_a + interessi_a
+# Il valore di rivendita viene sottratto perché è capitale che "torna" o rimane al proprietario
 netto_a = esborso_a - iva_a - tax_a - valore_rivendita
 
 # 2. LEASING
 spese_tot_l = servizi_l * anni
 iva_l, tax_l = calcola_benefici((rata_l * durata_mesi) + spese_tot_l, anticipo_l + riscatto_l)
 esborso_l = anticipo_l + (rata_l * durata_mesi) + riscatto_l + spese_tot_l
+# Anche nel leasing, ipotizzando il riscatto, l'auto ha un valore di rivendita finale
 netto_l = esborso_l - iva_l - tax_l - valore_rivendita
 
 # 3. NOLEGGIO
 esborso_n = anticipo_n + (rata_n * durata_mesi)
 iva_n, tax_n = calcola_benefici(esborso_n, 0)
+# Nel Noleggio il valore residuo è sempre 0 per l'utilizzatore
 netto_n = esborso_n - iva_n - tax_n
 
 # --- VISUALIZZAZIONE ---
@@ -124,10 +126,10 @@ c_graf, c_met = st.columns([2, 1])
 
 with c_graf:
     fig = go.Figure(data=[
-        go.Bar(name='Esborso Totale', x=['Acquisto', 'Leasing', 'Noleggio'], y=[esborso_a, esborso_l, esborso_n], marker_color='#BDC3C7'),
+        go.Bar(name='Esborso Totale (Uscite)', x=['Acquisto', 'Leasing', 'Noleggio'], y=[esborso_a, esborso_l, esborso_n], marker_color='#BDC3C7'),
         go.Bar(name='Costo Reale Netto', x=['Acquisto', 'Leasing', 'Noleggio'], y=[netto_a, netto_l, netto_n], marker_color='#27AE60')
     ])
-    fig.update_layout(barmode='group', title=f"Analisi su {durata_mesi} mesi")
+    fig.update_layout(barmode='group', title=f"Analisi su {durata_mesi} mesi (Esborso vs Costo Reale)")
     st.plotly_chart(fig, use_container_width=True)
 
 with c_met:
@@ -149,9 +151,9 @@ with col_fisc_tab:
 
 with col_cash_tab:
     df_res = pd.DataFrame({
-        "Voce": ["Esborso Lordo", "IVA Recuperata", "Risparmio Tasse", "Costo Netto Reale"],
-        "Acquisto": [esborso_a, iva_a, tax_a, netto_a],
-        "Leasing": [esborso_l, iva_l, tax_l, netto_l],
-        "Noleggio": [esborso_n, iva_n, tax_n, netto_n]
+        "Voce": ["Esborso Lordo", "IVA Recuperata", "Risparmio Tasse", "Valore Residuo (Asset)", "Costo Netto Reale"],
+        "Acquisto": [esborso_a, iva_a, tax_a, valore_rivendita, netto_a],
+        "Leasing": [esborso_l, iva_l, tax_l, valore_rivendita, netto_l],
+        "Noleggio": [esborso_n, iva_n, tax_n, 0, netto_n]
     })
     st.table(df_res.style.format(subset=["Acquisto", "Leasing", "Noleggio"], formatter="€ {:.0f}"))
