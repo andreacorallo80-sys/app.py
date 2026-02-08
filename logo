@@ -1,0 +1,18 @@
+import streamlit as st
+import pandas as pd
+import plotly.graph_objects as go
+
+# 1. Setup della pagina
+st.set_page_config(page_title="Smart Cost Analyzer | abbonamentiauto.it", layout="wide", page_icon="🚗")
+
+# 2. Inserimento Logo
+st.sidebar.image("https://www.abbonamentiauto.it/wp-content/uploads/2023/04/Logo-Abbonamenti-Auto-2.png", use_container_width=True)
+st.sidebar.markdown("---") # Una linea di separazione estetica
+
+# 3. Titolo e Intestazione
+st.title("🛡️ Smart Cost Analyzer")
+st.subheader("Simulatore TCO Professionale")
+st.caption("Powered by abbonamentiauto.it")
+st.divider()
+
+# ... resto del codice (sidebar settings, calcoli, etc.)
