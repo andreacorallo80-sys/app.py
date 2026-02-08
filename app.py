@@ -18,46 +18,47 @@ categoria = st.sidebar.selectbox("Tipologia Cliente", [
     "Agente di Commercio"
 ])
 
-# Sotto-tipologia per utilizzo aziendale/professionale
+# Sotto-tipologia per utilizzo
 uso_specifico = "Standard"
 if categoria in ["Società di Capitali (SRL, SPA)", "Ditta Individuale / Professionista Ordinario"]:
     opzioni_uso = ["Uso non esclusivamente strumentale (Auto flotta)", "Uso Strumentale (Scuola guida, Noleggio, ecc.)"]
     if categoria == "Società di Capitali (SRL, SPA)":
         opzioni_uso.insert(0, "Uso Promiscuo (Assegnata a dipendente)")
-    
     uso_specifico = st.sidebar.selectbox("Tipologia di Utilizzo", opzioni_uso)
 
 durata_mesi = st.sidebar.select_slider("Durata Contratto (Mesi)", options=[24, 36, 48, 60], value=48)
 aliquota_user = st.sidebar.slider("Tua Aliquota Fiscale media (%)", 0, 50, 24 if "Società" in categoria else 35)
 
-# --- LOGICHE FISCALI (DETRAZIONE E DEDUZIONE) ---
-# Default
-ded, iva_det, limite = 0.20, 0.40, 18075
+# --- LOGICHE FISCALI PRECISE ---
+# Default: Professionista/Ditta
+ded, iva_det, limite = 0.20, 0.40, 18075.99
 
 if categoria == "Privato / Forfettario":
     ded, iva_det, limite = 0.0, 0.0, 0
 elif categoria == "Agente di Commercio":
-    ded, iva_det, limite = 0.80, 1.0, 25822
+    ded, iva_det, limite = 0.80, 1.0, 25822.84
 elif "Uso Strumentale" in uso_specifico:
-    ded, iva_det, limite = 1.0, 1.0, 0 # 100% IVA e 100% Costi, senza limite
+    ded, iva_det, limite = 1.0, 1.0, 0 
 elif "Uso Promiscuo" in uso_specifico:
-    ded, iva_det, limite = 0.70, 0.40, 0 # 70% deducibilità senza limite di costo
+    ded, iva_det, limite = 0.70, 0.40, 0 
 
 aliq = aliquota_user / 100
 anni = durata_mesi / 12
 
-# --- FUNZIONE DI CALCOLO BENEFICI ---
+# --- FUNZIONE CALCOLO BENEFICI (REVISIONATA) ---
 def calcola_benefici(imponibile_servizi, imponibile_veicolo):
-    # Recupero IVA (Art. 19-bis1 DPR 633/72)
+    # 1. Recupero IVA
     iva_pagata = (imponibile_servizi + imponibile_veicolo) * 0.22
     iva_rec = iva_pagata * iva_det
+    iva_indetraibile = iva_pagata - iva_rec # Diventa costo deducibile
     
-    # L'IVA indetraibile diventa costo deducibile
-    iva_indetraibile = iva_pagata - iva_rec
+    # 2. Deducibilità Costi
+    # Il limite si applica solo alla quota del veicolo (prezzo acquisto o quota capitale canone)
+    quota_veicolo_deducibile = min(imponibile_veicolo, limite) if limite > 0 else imponibile_veicolo
     
-    # Deducibilità Costi (Art. 164 TUIR)
-    base_ded = imponibile_servizi + (min(imponibile_veicolo, limite) if limite > 0 else imponibile_veicolo) + iva_indetraibile
-    tasse_rec = (base_ded * ded) * aliq
+    # La base deducibile è: Servizi + Quota Veicolo limitata + IVA che non hai scaricato
+    base_ded_totale = imponibile_servizi + quota_veicolo_deducibile + iva_indetraibile
+    tasse_rec = (base_ded_totale * ded) * aliq
     
     return iva_rec, tasse_rec
 
@@ -81,34 +82,34 @@ with col_l:
     perc_riscatto = st.number_input("Riscatto Finale (%)", value=1.0, step=0.5)
     riscatto_l = prezzo_imp_l * (perc_riscatto / 100)
     st.write(f"Riscatto calcolato: € {riscatto_l:,.2f}")
-    st.write("**Spese fuori canone (annue):**")
-    servizi_l = st.number_input("Assic. + Manut. (€)", value=1500)
+    servizi_l = st.number_input("Assic. + Manut. Fuori Canone (Annue €)", value=1500)
 
 with col_n:
     st.subheader("🏢 Noleggio (NLT)")
     anticipo_n = st.number_input("Anticipo NLT (Imp. €)", value=3000)
     rata_n = st.number_input("Canone Mensile (Imp. €)", value=650)
-    st.info("💡 RCA, IF e Manutenzione incluse nel canone.")
+    st.info("💡 RCA, IF e Manutenzione incluse.")
 
 # --- ELABORAZIONE ---
 sval_factor = {24: 0.65, 36: 0.55, 48: 0.45, 60: 0.35}
 valore_rivendita = prezzo_imp_a * sval_factor[durata_mesi]
 
-# 1. ACQUISTO
+# Calcoli Acquisto
 spese_tot_a = (rca_a + if_a + manut_a) * anni
 iva_a, tax_a = calcola_benefici(spese_tot_a + interessi_a, prezzo_imp_a)
 esborso_a = prezzo_imp_a + spese_tot_a + interessi_a
 netto_a = esborso_a - iva_a - tax_a - valore_rivendita
 
-# 2. LEASING
+# Calcoli Leasing
 spese_tot_l = servizi_l * anni
+# Per semplicità nel leasing separiamo l'anticipo+riscatto (veicolo) dai canoni mensili (servizi)
 iva_l, tax_l = calcola_benefici((rata_l * durata_mesi) + spese_tot_l, anticipo_l + riscatto_l)
 esborso_l = anticipo_l + (rata_l * durata_mesi) + riscatto_l + spese_tot_l
 netto_l = esborso_l - iva_l - tax_l - valore_rivendita
 
-# 3. NOLEGGIO
+# Calcoli Noleggio (Nel NLT tutto il canone è considerato servizio/canone unico)
+iva_n, tax_n = calcola_benefici(anticipo_n + (rata_n * durata_mesi), 0)
 esborso_n = anticipo_n + (rata_n * durata_mesi)
-iva_n, tax_n = calcola_benefici(esborso_n, 0)
 netto_n = esborso_n - iva_n - tax_n
 
 # --- VISUALIZZAZIONE ---
@@ -117,7 +118,7 @@ c_graf, c_met = st.columns([2, 1])
 
 with c_graf:
     fig = go.Figure(data=[
-        go.Bar(name='Esborso Totale', x=['Acquisto', 'Leasing', 'Noleggio'], y=[esborso_a, esborso_l, esborso_n], marker_color='#BDC3C7'),
+        go.Bar(name='Esborso Lordo', x=['Acquisto', 'Leasing', 'Noleggio'], y=[esborso_a, esborso_l, esborso_n], marker_color='#BDC3C7'),
         go.Bar(name='Costo Reale Netto', x=['Acquisto', 'Leasing', 'Noleggio'], y=[netto_a, netto_l, netto_n], marker_color='#27AE60')
     ])
     fig.update_layout(barmode='group', title=f"Analisi su {durata_mesi} mesi")
@@ -128,23 +129,17 @@ with c_met:
     st.metric("Mensile Netto Leasing", f"€ {netto_l/durata_mesi:.2f}")
     st.metric("Mensile Netto Noleggio", f"€ {netto_n/durata_mesi:.2f}")
 
-# --- TABELLE DI DETTAGLIO FISCALE ---
-st.divider()
-st.subheader("📑 Inquadramento Fiscale e Riepilogo")
-col_fisc_tab, col_cash_tab = st.columns(2)
+# --- DETTAGLIO FISCALE ---
+st.subheader("📑 Riepilogo Fiscale")
+st.table(pd.DataFrame({
+    "Parametro": ["Detrazione IVA", "Deducibilità Costi", "Limite Ammortamento"],
+    "Valore": [f"{iva_det*100}%", f"{ded*100}%", f"€ {limite:,.2f}" if limite > 0 else "Nessuno"]
+}))
 
-with col_fisc_tab:
-    df_fiscale = pd.DataFrame({
-        "Parametro": ["Profilo Selezionato", "Detrazione IVA", "Deducibilità Costi", "Limite Ammortamento"],
-        "Valore Applicato": [f"{categoria} - {uso_specifico}", f"{iva_det*100}%", f"{ded*100}%", f"€ {limite:,.0f}" if limite > 0 else "Nessuno"]
-    })
-    st.table(df_fiscale)
-
-with col_cash_tab:
-    df_res = pd.DataFrame({
-        "Voce": ["Esborso Lordo", "IVA Recuperata", "Risparmio Tasse", "Costo Netto Reale"],
-        "Acquisto": [esborso_a, iva_a, tax_a, netto_a],
-        "Leasing": [esborso_l, iva_l, tax_l, netto_l],
-        "Noleggio": [esborso_n, iva_n, tax_n, netto_n]
-    })
-    st.table(df_res.style.format(subset=["Acquisto", "Leasing", "Noleggio"], formatter="€ {:.0f}"))
+df_res = pd.DataFrame({
+    "Voce": ["Esborso Lordo", "IVA Recuperata", "Risparmio Tasse", "Valore Residuo", "Costo Netto Finale"],
+    "Acquisto": [esborso_a, iva_a, tax_a, valore_rivendita, netto_a],
+    "Leasing": [esborso_l, iva_l, tax_l, valore_rivendita, netto_l],
+    "Noleggio": [esborso_n, iva_n, tax_n, 0, netto_n]
+})
+st.table(df_res.style.format(subset=["Acquisto", "Leasing", "Noleggio"], formatter="€ {:.0f}"))
