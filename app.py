@@ -12,7 +12,7 @@ def login():
         st.markdown("<br><br>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
-            st.image("https://www.abbonamentiauto.it/wp-content/uploads/2023/04/Logo-Abbonamenti-Auto-2.png", use_container_width=True)
+            st.image("https://wixmp-fe53c9ff592a4da924211f23.wixmp.com/users/f82fe7ec-0fdc-48d7-9d58-ebe5c84f803b/design-previews/1023c1f1-d49a-485d-8bb2-21c2bb5b5155/1765130978316-transparentThumbnail.png", use_container_width=True)
             st.subheader("🔐 Accesso Riservato")
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
