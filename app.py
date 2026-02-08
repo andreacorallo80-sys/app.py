@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+
 # Nuovo Titolo della WebApp
 st.title("🛡️ Smart Cost Analyzer")
 st.markdown("##### Powered by **abbonamentiauto.it**")
