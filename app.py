@@ -36,7 +36,8 @@ if login():
     # --- INTESTAZIONE CENTRATA ---
     t_col1, t_col2, t_col3 = st.columns([1, 1, 1])
     with t_col2:
-        st.image("https://www.abbonamentiauto.it/wp-content/uploads/2023/04/Logo-Abbonamenti-Auto-2.png", use_container_width=True)
+        st.image("https://wixmp-fe53c9ff592a4da924211f23.wixmp.com/users/f82fe7ec-0fdc-48d7-9d58-ebe5c84f803b/design-previews/1023c1f1-d49a-485d-8bb2-21c2bb5b5155/1765130978316-transparentThumbnail.png", use_container_width=True)
+        
 
     st.markdown("<h1 style='text-align: center;'>🚗 Smart Cost Analyzer</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center;'>Powered by <b>abbonamentiauto.it</b></p>", unsafe_allow_html=True)
