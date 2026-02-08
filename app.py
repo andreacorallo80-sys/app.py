@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-# 1. SETUP PAGINA (Deve essere sempre la prima istruzione)
-st.set_page_config(page_title="Smart Cost Analyzer | abbonamentiauto.it", layout="wide")
-
 # --- SISTEMA DI ACCESSO ---
 def login():
     if "authenticated" not in st.session_state:
