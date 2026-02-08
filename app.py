@@ -7,6 +7,7 @@ st.set_page_config(page_title="Analisi TCO Auto Pro", layout="wide")
 
 st.title("🚗 Analisi Comparativa Professionale Auto")
 st.markdown("### Logica Imponibile (IVA 22% esclusa)")
+st.warning("⚠️ Nota: Il Bollo Auto è sempre ESCLUSO dal calcolo e rimane a carico del cliente secondo le tariffe regionali.")
 
 # --- SIDEBAR: CONFIGURAZIONE FISCALE E DURATA ---
 st.sidebar.header("⚙️ Configurazione")
@@ -27,7 +28,7 @@ elif categoria == "Agente di Commercio":
     ded, iva_det, limite = 0.80, 1.0, 25822
 elif "Società" in categoria:
     ded, iva_det, limite = 0.70, 0.40, 0
-else: # Professionista Ordinario
+else: # Ditta Individuale / Professionista Ordinario
     ded, iva_det, limite = 0.20, 0.40, 18075
 
 aliq = aliquota_user / 100
@@ -68,7 +69,7 @@ with col_n:
     st.subheader("🏢 Noleggio (NLT)")
     anticipo_n = st.number_input("Anticipo NLT (Imp. €)", value=3000)
     rata_n = st.number_input("Canone Mensile (Imp. €)", value=650)
-    st.info("Nota: Assicurazione, IF, Manutenzione e Bollo sono già inclusi.")
+    st.info("Nota: Assicurazione, IF e Manutenzione incluse. Bollo sempre escluso.")
 
 # --- ELABORAZIONE ---
 sval_factor = {24: 0.65, 36: 0.55, 48: 0.45, 60: 0.35}
@@ -100,7 +101,7 @@ with c_graf:
         go.Bar(name='Esborso Totale', x=['Acquisto', 'Leasing', 'Noleggio'], y=[esborso_a, esborso_l, esborso_n], marker_color='#BDC3C7'),
         go.Bar(name='Costo Reale Netto', x=['Acquisto', 'Leasing', 'Noleggio'], y=[netto_a, netto_l, netto_n], marker_color='#27AE60')
     ])
-    fig.update_layout(barmode='group', title="Confronto Finanziario vs Reale")
+    fig.update_layout(barmode='group', title="Confronto Finanziario vs Reale (Bollo Escluso)")
     st.plotly_chart(fig, use_container_width=True)
 
 with c_met:
