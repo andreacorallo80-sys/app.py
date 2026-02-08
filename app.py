@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-
 st.title("🛡️ Smart Cost Analyzer") Smart Cost Analyzer")
 st.markdown("##### Powered by **abbonamentiauto.it**")
 st.markdown("---")
