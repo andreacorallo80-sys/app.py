@@ -9,6 +9,10 @@ st.title("🚗 Smart Cost Analyzer")
 st.markdown("### Logica Imponibile (IVA 22% esclusa)")
 st.warning("⚠️ Nota: Il Bollo Auto è sempre ESCLUSO dal calcolo.")
 
+import streamlit as st
+
+# Caricamento tramite URL (più veloce)
+st.sidebar.image("https://www.abbonamentiauto.it/wp-content/uploads/2023/04/Logo-Abbonamenti-Auto-2.png", use_container_width=True)
 # --- SIDEBAR: CONFIGURAZIONE FISCALE ---
 st.sidebar.header("⚙️ Configurazione Profilo")
 categoria = st.sidebar.selectbox("Tipologia Cliente", [
