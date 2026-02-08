@@ -1,11 +1,13 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-st.title("🛡️ Smart Cost Analyzer") Smart Cost Analyzer")
-st.markdown("##### Powered by **abbonamentiauto.it**")
-st.markdown("---")
+
 # Configurazione Pagina
 st.set_page_config(page_title="Analisi TCO Auto Pro", layout="wide")
+
+st.title("🚗 Smart Cost Analyzer")
+st.markdown("### Logica Imponibile (IVA 22% esclusa)")
+st.warning("⚠️ Nota: Il Bollo Auto è sempre ESCLUSO dal calcolo.")
 
 # --- SIDEBAR: CONFIGURAZIONE FISCALE ---
 st.sidebar.header("⚙️ Configurazione Profilo")
