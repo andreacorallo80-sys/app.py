@@ -7,7 +7,8 @@ import streamlit as st
 st.set_page_config(page_title="Analisi TCO Auto Pro", layout="wide")
 
 st.title("🚗 Smart Cost Analyzer")
-st.subtitle ("powered by abbonamentiauto.it")
+st.markdown("##### Powered by **abbonamentiauto.it**")
+st.markdown("---")
 st.markdown("### Logica Imponibile (IVA 22% esclusa)")
 st.warning("⚠️ Nota: Il Bollo Auto è sempre ESCLUSO dal calcolo.")
 
