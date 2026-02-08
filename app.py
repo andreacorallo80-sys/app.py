@@ -9,7 +9,7 @@ st.title("🚗 Analisi Comparativa Professionale Auto")
 st.markdown("### Logica Imponibile (IVA 22% esclusa)")
 st.warning("⚠️ Nota: Il Bollo Auto è sempre ESCLUSO dal calcolo.")
 
-# --- SIDEBAR: CONFIGURAZIONE FISCALE ---
+# --- SIDEBAR: CONFIGURAZIONE FISCALE E DURATA ---
 st.sidebar.header("⚙️ Configurazione")
 categoria = st.sidebar.selectbox("Tipologia Cliente", [
     "Privato / Forfettario",
@@ -18,7 +18,7 @@ categoria = st.sidebar.selectbox("Tipologia Cliente", [
     "Agente di Commercio"
 ])
 
-# Scelta utilizzo per Società
+# Sotto-tipologia per aziende
 uso_aziendale = "Standard"
 if categoria == "Società di Capitali (SRL, SPA)":
     uso_aziendale = st.sidebar.selectbox("Tipologia di Utilizzo", [
@@ -36,7 +36,7 @@ elif categoria == "Agente di Commercio":
     ded, iva_det, limite = 0.80, 1.0, 25822
 elif categoria == "Società di Capitali (SRL, SPA)":
     if "Promiscuo" in uso_aziendale:
-        ded, iva_det, limite = 0.70, 0.40, 0 # Nessun limite di costo per uso promiscuo
+        ded, iva_det, limite = 0.70, 0.40, 0 # Deducibilità senza limite di costo
     else:
         ded, iva_det, limite = 0.20, 0.40, 18075
 else: # Professionista Ordinario / Ditta Individuale
@@ -45,12 +45,12 @@ else: # Professionista Ordinario / Ditta Individuale
 aliq = aliquota_user / 100
 anni = durata_mesi / 12
 
-# --- FUNZIONE CALCOLO BENEFICI ---
+# --- FUNZIONI DI CALCOLO ---
 def calcola_benefici(imponibile_servizi, imponibile_veicolo):
     iva_pagata = (imponibile_servizi + imponibile_veicolo) * 0.22
     iva_rec = iva_pagata * iva_det
     iva_indetraibile = iva_pagata - iva_rec
-    # IVA indetraibile sommata al costo per la deduzione
+    # La quota indetraibile dell'IVA diventa un costo deducibile
     base_ded = imponibile_servizi + min(imponibile_veicolo, limite if limite > 0 else 9999999) + iva_indetraibile
     tasse_rec = (base_ded * ded) * aliq
     return iva_rec, tasse_rec
@@ -61,6 +61,7 @@ col_a, col_l, col_n = st.columns(3)
 with col_a:
     st.subheader("💰 Acquisto")
     prezzo_imp_a = st.number_input("Prezzo Auto (Imp. €)", value=35000, key="prezzo_a")
+    anticipo_a = st.number_input("Anticipo Versato (€)", value=5000)
     st.write("**Spese Annue (Imp.):**")
     rca_a = st.number_input("RCA (€)", value=500)
     if_a = st.number_input("Incendio e Furto (€)", value=600)
@@ -81,13 +82,13 @@ with col_n:
     st.subheader("🏢 Noleggio (NLT)")
     anticipo_n = st.number_input("Anticipo NLT (Imp. €)", value=3000)
     rata_n = st.number_input("Canone Mensile (Imp. €)", value=650)
-    st.info("Nota: RCA, IF e Manutenzione incluse.")
+    st.info("Assicurazione, IF e Manutenzione incluse.")
 
 # --- ELABORAZIONE ---
 sval_factor = {24: 0.65, 36: 0.55, 48: 0.45, 60: 0.35}
 valore_rivendita = prezzo_imp_a * sval_factor[durata_mesi]
 
-# Risultati
+# Calcoli
 iva_a, tax_a = calcola_benefici((rca_a + if_a + manut_a) * anni + interessi_a, prezzo_imp_a)
 esborso_a = prezzo_imp_a + (rca_a + if_a + manut_a) * anni + interessi_a
 netto_a = esborso_a - iva_a - tax_a - valore_rivendita
@@ -109,5 +110,30 @@ with c_graf:
         go.Bar(name='Esborso Lordo', x=['Acquisto', 'Leasing', 'Noleggio'], y=[esborso_a, esborso_l, esborso_n], marker_color='#BDC3C7'),
         go.Bar(name='Costo Reale Netto', x=['Acquisto', 'Leasing', 'Noleggio'], y=[netto_a, netto_l, netto_n], marker_color='#27AE60')
     ])
-    fig.update_layout(barmode='group', title="Confronto Finanziario vs Costo Reale")
+    fig.update_layout(barmode='group', title="Confronto Finanziario vs Reale")
+    st.plotly_chart(fig, use_container_width=True)
+
+with c_met:
+    st.metric("Mensile Netto Acquisto", f"€ {netto_a/durata_mesi:.2f}")
+    st.metric("Mensile Netto Leasing", f"€ {netto_l/durata_mesi:.2f}")
+    st.metric("Mensile Netto Noleggio", f"€ {netto_n/durata_mesi:.2f}")
+
+# --- TABELLE DI DETTAGLIO FISCALE ---
+st.subheader("📑 Riepilogo delle Detrazioni e Deduzioni")
+df_fiscale = pd.DataFrame({
+    "Profilo Selezionato": [f"{categoria} ({uso_aziendale})"],
+    "Detrazione IVA": [f"{iva_det*100}%"],
+    "Deducibilità Costi": [f"{ded*100}%"],
+    "Limite Imponibile Auto": [f"€ {limite:,.0f}" if limite > 0 else "Nessuno"]
+})
+st.table(df_fiscale)
+
+st.subheader("📉 Analisi Cash Flow Dettagliata")
+df_res = pd.DataFrame({
+    "Voce (Totale Periodo)": ["Esborso Lordo", "IVA Recuperata", "Risparmio Imposte (IRES/IRPEF)", "Valore Residuo", "Costo Netto Reale"],
+    "Acquisto": [esborso_a, iva_a, tax_a, valore_rivendita, netto_a],
+    "Leasing": [esborso_l, iva_l, tax_l, valore_rivendita, netto_l],
+    "Noleggio": [esborso_n, iva_n, tax_n, 0, netto_n]
+})
+st.table(df_res.style.format(subset=["Acquisto", "Leasing", "Noleggio"], formatter="€ {:.0f}"))roup', title="Confronto Finanziario vs Costo Reale")
     st.plotly_chart(fig, use_container_width=True)
