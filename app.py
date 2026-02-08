@@ -9,6 +9,14 @@ st.title("🚗 Analisi Comparativa Professionale Auto")
 st.markdown("### Logica Imponibile (IVA 22% esclusa)")
 st.warning("⚠️ Nota: Il Bollo Auto è sempre ESCLUSO dal calcolo.")
 
+# --- FUNZIONE MATEMATICA RATA (Ammortamento Francese) ---
+def calcola_rata_fin(capitale, tasso_annuo, mesi):
+    if tasso_annuo <= 0:
+        return capitale / mesi if mesi > 0 else 0
+    tasso_mensile = (tasso_annuo / 100) / 12
+    rata = capitale * (tasso_mensile * (1 + tasso_mensile)**mesi) / ((1 + tasso_mensile)**mesi - 1)
+    return rata
+
 # --- SIDEBAR: CONFIGURAZIONE FISCALE ---
 st.sidebar.header("⚙️ Configurazione Profilo")
 categoria = st.sidebar.selectbox("Tipologia Cliente", [
@@ -30,7 +38,6 @@ durata_mesi = st.sidebar.select_slider("Durata Contratto (Mesi)", options=[24, 3
 aliquota_user = st.sidebar.slider("Tua Aliquota Fiscale media (%)", 0, 50, 24 if "Società" in categoria else 35)
 
 # --- LOGICHE FISCALI PRECISE ---
-# Default: Professionista/Ditta
 ded, iva_det, limite = 0.20, 0.40, 18075.99
 
 if categoria == "Privato / Forfettario":
@@ -45,21 +52,14 @@ elif "Uso Promiscuo" in uso_specifico:
 aliq = aliquota_user / 100
 anni = durata_mesi / 12
 
-# --- FUNZIONE CALCOLO BENEFICI (REVISIONATA) ---
+# --- FUNZIONE CALCOLO BENEFICI ---
 def calcola_benefici(imponibile_servizi, imponibile_veicolo):
-    # 1. Recupero IVA
     iva_pagata = (imponibile_servizi + imponibile_veicolo) * 0.22
     iva_rec = iva_pagata * iva_det
-    iva_indetraibile = iva_pagata - iva_rec # Diventa costo deducibile
-    
-    # 2. Deducibilità Costi
-    # Il limite si applica solo alla quota del veicolo (prezzo acquisto o quota capitale canone)
+    iva_indetraibile = iva_pagata - iva_rec 
     quota_veicolo_deducibile = min(imponibile_veicolo, limite) if limite > 0 else imponibile_veicolo
-    
-    # La base deducibile è: Servizi + Quota Veicolo limitata + IVA che non hai scaricato
     base_ded_totale = imponibile_servizi + quota_veicolo_deducibile + iva_indetraibile
     tasse_rec = (base_ded_totale * ded) * aliq
-    
     return iva_rec, tasse_rec
 
 # --- INPUT DATI ---
@@ -68,11 +68,25 @@ col_a, col_l, col_n = st.columns(3)
 with col_a:
     st.subheader("💰 Acquisto")
     prezzo_imp_a = st.number_input("Prezzo Auto (Imp. €)", value=35000, key="prezzo_a")
+    
+    # --- NUOVA SEZIONE FINANZIAMENTO ---
+    metodo_pagamento = st.radio("Metodo di Pagamento", ["Contanti", "Finanziamento"])
+    interessi_a = 0.0
+    if metodo_pagamento == "Finanziamento":
+        anticipo_f = st.number_input("Anticipo (€)", value=5000)
+        tan_f = st.number_input("TAN %", value=5.9)
+        capitale_da_finanziare = prezzo_imp_a - anticipo_f
+        if capitale_da_finanziare > 0:
+            rata_f = calcola_rata_fin(capitale_da_finanziare, tan_f, durata_mesi)
+            interessi_a = (rata_f * durata_mesi) - capitale_da_finanziare
+            st.info(f"Rata Mensile: € {rata_f:.2f}")
+    else:
+        interessi_a = st.number_input("Interessi Totali (€)", value=0)
+
     st.write("**Spese Annue Accessorie:**")
     rca_a = st.number_input("RCA (€)", value=500)
     if_a = st.number_input("Incendio e Furto (€)", value=600)
     manut_a = st.number_input("Manutenzione (€)", value=400)
-    interessi_a = st.number_input("Interessi Finanziamento (€)", value=1200)
 
 with col_l:
     st.subheader("📈 Leasing")
@@ -102,12 +116,11 @@ netto_a = esborso_a - iva_a - tax_a - valore_rivendita
 
 # Calcoli Leasing
 spese_tot_l = servizi_l * anni
-# Per semplicità nel leasing separiamo l'anticipo+riscatto (veicolo) dai canoni mensili (servizi)
 iva_l, tax_l = calcola_benefici((rata_l * durata_mesi) + spese_tot_l, anticipo_l + riscatto_l)
 esborso_l = anticipo_l + (rata_l * durata_mesi) + riscatto_l + spese_tot_l
 netto_l = esborso_l - iva_l - tax_l - valore_rivendita
 
-# Calcoli Noleggio (Nel NLT tutto il canone è considerato servizio/canone unico)
+# Calcoli Noleggio
 iva_n, tax_n = calcola_benefici(anticipo_n + (rata_n * durata_mesi), 0)
 esborso_n = anticipo_n + (rata_n * durata_mesi)
 netto_n = esborso_n - iva_n - tax_n
@@ -132,14 +145,4 @@ with c_met:
 # --- DETTAGLIO FISCALE ---
 st.subheader("📑 Riepilogo Fiscale")
 st.table(pd.DataFrame({
-    "Parametro": ["Detrazione IVA", "Deducibilità Costi", "Limite Ammortamento"],
-    "Valore": [f"{iva_det*100}%", f"{ded*100}%", f"€ {limite:,.2f}" if limite > 0 else "Nessuno"]
-}))
-
-df_res = pd.DataFrame({
-    "Voce": ["Esborso Lordo", "IVA Recuperata", "Risparmio Tasse", "Valore Residuo", "Costo Netto Finale"],
-    "Acquisto": [esborso_a, iva_a, tax_a, valore_rivendita, netto_a],
-    "Leasing": [esborso_l, iva_l, tax_l, valore_rivendita, netto_l],
-    "Noleggio": [esborso_n, iva_n, tax_n, 0, netto_n]
-})
-st.table(df_res.style.format(subset=["Acquisto", "Leasing", "Noleggio"], formatter="€ {:.0f}"))
+    "Parametro":
