@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+
 # --- CONFIGURAZIONE ACCESSO ---
 def check_password():
     """Restituisce True se l'utente ha inserito la password corretta."""
