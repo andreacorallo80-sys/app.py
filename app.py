@@ -135,5 +135,4 @@ df_res = pd.DataFrame({
     "Leasing": [esborso_l, iva_l, tax_l, valore_rivendita, netto_l],
     "Noleggio": [esborso_n, iva_n, tax_n, 0, netto_n]
 })
-st.table(df_res.style.format(subset=["Acquisto", "Leasing", "Noleggio"], formatter="€ {:.0f}"))roup', title="Confronto Finanziario vs Costo Reale")
-    st.plotly_chart(fig, use_container_width=True)
+st.table(df_res.style.format(subset=["Acquisto", "Leasing", "Noleggio"], formatter="€ {:.0f}"))
