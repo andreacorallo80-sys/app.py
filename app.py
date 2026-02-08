@@ -3,36 +3,6 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-# --- CONFIGURAZIONE ACCESSO ---
-def check_password():
-    """Restituisce True se l'utente ha inserito la password corretta."""
-
-    def password_entered():
-        """Controlla se la password inserita è corretta."""
-        if st.session_state["username"] == "admin" and st.session_state["password"] == "auto2024":
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]  # Rimuove la password dallo stato per sicurezza
-            del st.session_state["username"]
-        else:
-            st.session_state["password_correct"] = False
-
-    if "password_correct" not in st.session_state:
-        # Visualizza i campi per il login
-        st.markdown("<h1 style='text-align: center;'>🔐 Accesso Riservato</h1>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns([1,1,1])
-        with col2:
-            st.text_input("Username", on_change=password_entered, key="username")
-            st.text_input("Password", type="password", on_change=password_entered, key="password")
-            
-            if "password_correct" in st.session_state and not st.session_state["password_correct"]:
-                st.error("😕 Utente o Password errati")
-        return False
-    else:
-        return st.session_state["password_correct"]
-
-# --- CONTROLLO ACCESSO ---
-if check_password():
-
 # Configurazione Pagina
 st.set_page_config(page_title="Analisi TCO Auto Pro", layout="wide")
 
