@@ -1,7 +1,25 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import streamlit as st
 
+# 1. Configurazione Pagina
+st.set_page_config(page_title="Smart Cost Analyzer | abbonamentiauto.it", layout="wide")
+
+# 2. Logo al Centro
+# Creiamo 3 colonne: le due laterali servono a spingere l'immagine al centro
+col1, col2, col3 = st.columns([1, 1, 1]) 
+
+with col2: # Usiamo la colonna centrale
+    st.image(
+        "https://www.abbonamentiauto.it/wp-content/uploads/2023/04/Logo-Abbonamenti-Auto-2.png", 
+        use_container_width=True
+    )
+
+# 3. Titolo centrato (opzionale, usando HTML)
+st.markdown("<h1 style='text-align: center;'>🛡️ Smart Cost Analyzer</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center;'>Powered by abbonamentiauto.it</p>", unsafe_allow_html=True)
+st.divider()
 # Configurazione Pagina
 st.set_page_config(page_title="Analisi TCO Auto Pro", layout="wide")
 
