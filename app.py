@@ -1,4 +1,4 @@
-import streamlit as st
+ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
@@ -9,7 +9,7 @@ st.title("🚗 Analisi Comparativa Professionale Auto")
 st.markdown("### Logica Imponibile (IVA 22% esclusa)")
 st.warning("⚠️ Nota: Il Bollo Auto è sempre ESCLUSO dal calcolo.")
 
-# --- FUNZIONE MATEMATICA RATA (Ammortamento Francese) ---
+# --- FUNZIONE MATEMATICA RATA ---
 def calcola_rata_fin(capitale, tasso_annuo, mesi):
     if tasso_annuo <= 0:
         return capitale / mesi if mesi > 0 else 0
@@ -26,7 +26,6 @@ categoria = st.sidebar.selectbox("Tipologia Cliente", [
     "Agente di Commercio"
 ])
 
-# Sotto-tipologia per utilizzo
 uso_specifico = "Standard"
 if categoria in ["Società di Capitali (SRL, SPA)", "Ditta Individuale / Professionista Ordinario"]:
     opzioni_uso = ["Uso non esclusivamente strumentale (Auto flotta)", "Uso Strumentale (Scuola guida, Noleggio, ecc.)"]
@@ -52,97 +51,13 @@ elif "Uso Promiscuo" in uso_specifico:
 aliq = aliquota_user / 100
 anni = durata_mesi / 12
 
-# --- FUNZIONE CALCOLO BENEFICI ---
-def calcola_benefici(imponibile_servizi, imponibile_veicolo):
-    iva_pagata = (imponibile_servizi + imponibile_veicolo) * 0.22
-    iva_rec = iva_pagata * iva_det
-    iva_indetraibile = iva_pagata - iva_rec 
-    quota_veicolo_deducibile = min(imponibile_veicolo, limite) if limite > 0 else imponibile_veicolo
-    base_ded_totale = imponibile_servizi + quota_veicolo_deducibile + iva_indetraibile
-    tasse_rec = (base_ded_totale * ded) * aliq
-    return iva_rec, tasse_rec
-
-# --- INPUT DATI ---
-col_a, col_l, col_n = st.columns(3)
-
-with col_a:
-    st.subheader("💰 Acquisto")
-    prezzo_imp_a = st.number_input("Prezzo Auto (Imp. €)", value=35000, key="prezzo_a")
+# --- FUNZIONE CALCOLO BENEFICI (ARCHITETTURA CORRETTA) ---
+def calcola_benefici_pro(imp_servizi, imp_veicolo, interessi_passivi=0):
+    # 1. Recupero IVA
+    iva_veicolo = imp_veicolo * 0.22
+    iva_servizi = imp_servizi * 0.22
+    iva_recuperata = (iva_veicolo + iva_servizi) * iva_det
+    iva_indetraibile = (iva_veicolo + iva_servizi) - iva_recuperata
     
-    # --- NUOVA SEZIONE FINANZIAMENTO ---
-    metodo_pagamento = st.radio("Metodo di Pagamento", ["Contanti", "Finanziamento"])
-    interessi_a = 0.0
-    if metodo_pagamento == "Finanziamento":
-        anticipo_f = st.number_input("Anticipo (€)", value=5000)
-        tan_f = st.number_input("TAN %", value=5.9)
-        capitale_da_finanziare = prezzo_imp_a - anticipo_f
-        if capitale_da_finanziare > 0:
-            rata_f = calcola_rata_fin(capitale_da_finanziare, tan_f, durata_mesi)
-            interessi_a = (rata_f * durata_mesi) - capitale_da_finanziare
-            st.info(f"Rata Mensile: € {rata_f:.2f}")
-    else:
-        interessi_a = st.number_input("Interessi Totali (€)", value=0)
-
-    st.write("**Spese Annue Accessorie:**")
-    rca_a = st.number_input("RCA (€)", value=500)
-    if_a = st.number_input("Incendio e Furto (€)", value=600)
-    manut_a = st.number_input("Manutenzione (€)", value=400)
-
-with col_l:
-    st.subheader("📈 Leasing")
-    prezzo_imp_l = st.number_input("Prezzo Listino (Imp. €)", value=35000, key="prezzo_l")
-    anticipo_l = st.number_input("Primo Canone (Imp. €)", value=6000)
-    rata_l = st.number_input("Canone Mensile (Imp. €)", value=400)
-    perc_riscatto = st.number_input("Riscatto Finale (%)", value=1.0, step=0.5)
-    riscatto_l = prezzo_imp_l * (perc_riscatto / 100)
-    st.write(f"Riscatto calcolato: € {riscatto_l:,.2f}")
-    servizi_l = st.number_input("Assic. + Manut. Fuori Canone (Annue €)", value=1500)
-
-with col_n:
-    st.subheader("🏢 Noleggio (NLT)")
-    anticipo_n = st.number_input("Anticipo NLT (Imp. €)", value=3000)
-    rata_n = st.number_input("Canone Mensile (Imp. €)", value=650)
-    st.info("💡 RCA, IF e Manutenzione incluse.")
-
-# --- ELABORAZIONE ---
-sval_factor = {24: 0.65, 36: 0.55, 48: 0.45, 60: 0.35}
-valore_rivendita = prezzo_imp_a * sval_factor[durata_mesi]
-
-# Calcoli Acquisto
-spese_tot_a = (rca_a + if_a + manut_a) * anni
-iva_a, tax_a = calcola_benefici(spese_tot_a + interessi_a, prezzo_imp_a)
-esborso_a = prezzo_imp_a + spese_tot_a + interessi_a
-netto_a = esborso_a - iva_a - tax_a - valore_rivendita
-
-# Calcoli Leasing
-spese_tot_l = servizi_l * anni
-iva_l, tax_l = calcola_benefici((rata_l * durata_mesi) + spese_tot_l, anticipo_l + riscatto_l)
-esborso_l = anticipo_l + (rata_l * durata_mesi) + riscatto_l + spese_tot_l
-netto_l = esborso_l - iva_l - tax_l - valore_rivendita
-
-# Calcoli Noleggio
-iva_n, tax_n = calcola_benefici(anticipo_n + (rata_n * durata_mesi), 0)
-esborso_n = anticipo_n + (rata_n * durata_mesi)
-netto_n = esborso_n - iva_n - tax_n
-
-# --- VISUALIZZAZIONE ---
-st.divider()
-c_graf, c_met = st.columns([2, 1])
-
-with c_graf:
-    fig = go.Figure(data=[
-        go.Bar(name='Esborso Lordo', x=['Acquisto', 'Leasing', 'Noleggio'], y=[esborso_a, esborso_l, esborso_n], marker_color='#BDC3C7'),
-        go.Bar(name='Costo Reale Netto', x=['Acquisto', 'Leasing', 'Noleggio'], y=[netto_a, netto_l, netto_n], marker_color='#27AE60')
-    ])
-    fig.update_layout(barmode='group', title=f"Analisi su {durata_mesi} mesi")
-    st.plotly_chart(fig, use_container_width=True)
-
-with c_met:
-    st.metric("Mensile Netto Acquisto", f"€ {netto_a/durata_mesi:.2f}")
-    st.metric("Mensile Netto Leasing", f"€ {netto_l/durata_mesi:.2f}")
-    st.metric("Mensile Netto Noleggio", f"€ {netto_n/durata_mesi:.2f}")
-
-# --- DETTAGLIO FISCALE ---
-st.subheader("📑 Riepilogo Fiscale")
-st.table(pd.DataFrame({
-    "Parametro":
+    # 2. Deducibilità (TUIR)
+    # Il limite si applica solo al veicolo + la sua
