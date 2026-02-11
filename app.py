@@ -46,6 +46,36 @@ if login():
     st.markdown("### Logica Imponibile (IVA 22% esclusa)")
     st.warning("⚠️ Nota: Il Bollo Auto è sempre ESCLUSO dal calcolo.")
 
+    # --- DIZIONARIO QUADRI NORMATIVI ---
+quadri_normativi = {
+    "Privato / Forfettario": {
+        "titolo": "Regime Privati / Forfettari",
+        "norma": "Art. 1 comma 54-89 L. 190/2014",
+        "dettaglio": "I soggetti in regime forfettario non possono detrarre l'IVA né dedurre i costi analitici, in quanto la deduzione avviene in modo forfettario tramite coefficiente di redditività."
+    },
+    "Ditta Individuale / Professionista Ordinario": {
+        "titolo": "Professionisti e Imprese Individuali",
+        "norma": "Art. 164 comma 1 lett. b) TUIR",
+        "dettaglio": "Deducibilità limitata al 20% dei costi. L'IVA è detraibile al 40% (Art. 19-bis1 DPR 633/72) se il mezzo non è ad uso esclusivo strumentale."
+    },
+    "Società di Capitali (SRL, SPA)": {
+        "titolo": "Società di Capitali - Uso Flotta",
+        "norma": "Art. 164 TUIR e Art. 19-bis1 DPR 633/72",
+        "dettaglio": "Deducibilità al 20% con limite di costo di € 18.075,99. Se assegnata come fringe benefit ai dipendenti (uso promiscuo), la deducibilità sale al 70% senza limiti di costo."
+    },
+    "Agente di Commercio": {
+        "titolo": "Agenti e Rappresentanti di Commercio",
+        "norma": "Art. 164 comma 1 lett. b) TUIR",
+        "dettaglio": "Regime di favore: deducibilità all'80% con tetto elevato a € 25.822,84. L'IVA è detraibile al 100% (se inerente)."
+    }
+}
+
+# --- VISUALIZZAZIONE QUADRO NORMATIVO NELL'APP ---
+with st.expander(f"📄 Quadro Normativo: {categoria}"):
+    info = quadri_normativi[categoria]
+    st.write(f"**Riferimento:** {info['norma']}")
+    st.info(info['dettaglio'])
+
     # --- SIDEBAR: CONFIGURAZIONE FISCALE ---
     st.sidebar.header("⚙️ Configurazione Profilo")
     categoria = st.sidebar.selectbox("Tipologia Cliente", [
