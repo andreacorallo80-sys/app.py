@@ -2,22 +2,24 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
+# 1. CONFIGURAZIONE PAGINA (Deve essere sempre la prima istruzione)
+st.set_page_config(page_title="Smart Cost Analyzer | abbonamentiauto.it", layout="wide")
+
 # --- SISTEMA DI ACCESSO ---
 def login():
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
 
     if not st.session_state["authenticated"]:
-        # Schermata di Login centrata
         st.markdown("<br><br>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
+            # Logo Abbonamenti Auto
             st.image("https://wixmp-fe53c9ff592a4da924211f23.wixmp.com/users/f82fe7ec-0fdc-48d7-9d58-ebe5c84f803b/design-previews/1023c1f1-d49a-485d-8bb2-21c2bb5b5155/1765130978316-transparentThumbnail.png", use_container_width=True)
             st.subheader("🔐 Accesso Riservato")
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
             if st.button("Accedi"):
-                # Credenziali richieste
                 if username == "abbonamentiauto" and password == "stiamolavorandopervoi26!":
                     st.session_state["authenticated"] = True
                     st.rerun()
@@ -28,7 +30,7 @@ def login():
 
 # --- ESECUZIONE APP ---
 if login():
-    # Logout nella sidebar per comodità
+    # Logout nella sidebar
     if st.sidebar.button("Esci / Logout"):
         st.session_state["authenticated"] = False
         st.rerun()
@@ -37,15 +39,10 @@ if login():
     t_col1, t_col2, t_col3 = st.columns([1, 1, 1])
     with t_col2:
         st.image("https://wixmp-fe53c9ff592a4da924211f23.wixmp.com/users/f82fe7ec-0fdc-48d7-9d58-ebe5c84f803b/design-previews/1023c1f1-d49a-485d-8bb2-21c2bb5b5155/1765130978316-transparentThumbnail.png", use_container_width=True)
-        
 
     st.markdown("<h1 style='text-align: center;'>🚗 Smart Cost Analyzer</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center;'>Powered by <b>abbonamentiauto.it</b></p>", unsafe_allow_html=True)
     st.divider()
-
-    st.markdown("### Logica Imponibile (IVA 22% esclusa)")
-    st.warning("⚠️ Nota: Il Bollo Auto è sempre ESCLUSO dal calcolo.")
-
 
     # --- SIDEBAR: CONFIGURAZIONE FISCALE ---
     st.sidebar.header("⚙️ Configurazione Profilo")
@@ -65,6 +62,31 @@ if login():
 
     durata_mesi = st.sidebar.select_slider("Durata Contratto (Mesi)", options=[24, 36, 48, 60], value=48)
     aliquota_user = st.sidebar.slider("Tua Aliquota Fiscale media (%)", 0, 50, 24 if "Società" in categoria else 35)
+
+    # --- QUADRO NORMATIVO DINAMICO ---
+    quadri_normativi = {
+        "Privato / Forfettario": {
+            "norma": "Art. 1 comma 54-89 L. 190/2014",
+            "dettaglio": "I soggetti forfettari non detraggono l'IVA né deducono i costi analiticamente. La convenienza è legata all'abbattimento forfettario dell'imponibile."
+        },
+        "Ditta Individuale / Professionista Ordinario": {
+            "norma": "Art. 164 comma 1 lett. b) TUIR",
+            "dettaglio": "Deducibilità limitata al 20% dei costi. IVA detraibile al 40% (Art. 19-bis1 DPR 633/72). Tetto ammortamento € 18.075,99."
+        },
+        "Società di Capitali (SRL, SPA)": {
+            "norma": "Art. 164 TUIR",
+            "dettaglio": "Uso standard: deducibilità 20%. Se assegnata a dipendente (Uso Promiscuo): deducibilità 70% senza limiti di costo ammortizzabile."
+        },
+        "Agente di Commercio": {
+            "norma": "Art. 164 comma 1 lett. b) TUIR",
+            "dettaglio": "Regime agevolato: deducibilità 80% dei costi. Tetto ammortamento elevato a € 25.822,84. IVA detraibile 100%."
+        }
+    }
+
+    with st.expander(f"📄 Quadro Normativo di riferimento: {categoria}"):
+        info = quadri_normativi[categoria]
+        st.write(f"**Riferimento Legale:** {info['norma']}")
+        st.info(info['dettaglio'])
 
     # --- LOGICHE FISCALI ---
     ded, iva_det, limite = 0.20, 0.40, 18075
