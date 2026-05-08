@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # 1. CONFIGURAZIONE PAGINA (Deve essere sempre la prima istruzione)
-st.set_page_config(page_title="Smart Cost Analyzer | abbonamentiauto.it", layout="wide")
+st.set_page_config(page_title="Smart Cost Analyzer | Abbonamentiauto.it", layout="wide")
 
 # --- SISTEMA DI ACCESSO ---
 def login():
